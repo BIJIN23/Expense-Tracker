@@ -8,10 +8,10 @@ function createSession(userId, tokenHash, expiresAT) {
   return rows.lastInsertRowid;
 }
 
-function getSession(tokenHash) {
+function findSessionByTokenHash(tokenHash) {
   const statement = db.prepare(`SELECT * FROM sessions WHERE token_hash = ? `);
 
   const rows = statement.get(tokenHash);
   return rows;
 }
-module.exports = { createSession, getSession };
+module.exports = { createSession, findSessionByTokenHash };

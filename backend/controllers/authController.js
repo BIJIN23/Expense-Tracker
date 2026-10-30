@@ -4,6 +4,12 @@ const {
 } = require("../repositories/userRepository");
 
 const { hashPassword, verifyPassword } = require("../utils/passwordUtils");
+const {
+  generateSessionToken,
+  hashSessionToken,
+} = require("../utils/sessionUtils");
+
+const { createSession } = require("../repositories/sessionRepository");
 
 function registerUser(req, res, next) {
   try {
@@ -23,7 +29,7 @@ function registerUser(req, res, next) {
     }
     const normalizedName = name.trim();
     const normalizedEmail = email.trim().toLowerCase();
-    const existingUser = findUserByEmail(email);
+    const existingUser = findUserByEmail(normalizedEmail);
 
     if (existingUser) {
       return res.status(409).json({ message: "Email is already registered" });
@@ -56,12 +62,28 @@ function loginUser(req, res, next) {
     const normalizedEmail = email.trim().toLowerCase();
     const existingUser = findUserByEmail(normalizedEmail);
     if (!existingUser)
-      return res.status(401).json({ message: "User is not registered" });
+      return res.status(401).json({ message: "Invalid email or password" });
     const passwordMatch = verifyPassword(password, existingUser.password_hash);
 
     if (!passwordMatch) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
+
+    const sessionsToken = generateSessionToken();
+    const sessionTokenHash = hashSessionToken(sessionsToken);
+    const expiryDate = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000,
+    ).toISOString();
+
+    createSession(existingUser.id, sessionTokenHash, expiryDate);
+
+    res.cookie("session_token", sessionsToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      path: "/",
+    });
     return res.status(200).json({
       message: "logined in Successfully",
       user: {
