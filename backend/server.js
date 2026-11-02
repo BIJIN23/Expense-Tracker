@@ -3,7 +3,7 @@ const cookieParser = require("cookie-parser");
 require("./database");
 const authRoutes = require("./routes/authRoutes");
 const { errorHandler } = require("./middleware/errorHandler");
-const { authenticate } = require("./middleware/authenticate");
+const transactionRoutes = require("./routes/transactionRoutes");
 
 const app = express();
 const port = 5000;
@@ -16,12 +16,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
-app.get("/api/auth/me-test", authenticate, (req, res) => {
-  res.json({
-    message: "Authenticated",
-    userId: req.userId,
-  });
-});
+app.use("/api/transactions", transactionRoutes);
 app.use(errorHandler);
 
 app.listen(port, () => {
