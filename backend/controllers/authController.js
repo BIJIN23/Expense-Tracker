@@ -1,15 +1,17 @@
 const {
   findUserByEmail,
   createUser,
+  findUserById,
 } = require("../repositories/userRepository");
-
 const { hashPassword, verifyPassword } = require("../utils/passwordUtils");
 const {
   generateSessionToken,
   hashSessionToken,
 } = require("../utils/sessionUtils");
-
-const { createSession } = require("../repositories/sessionRepository");
+const {
+  createSession,
+  deleteSessionByTokenHash,
+} = require("../repositories/sessionRepository");
 
 function registerUser(req, res, next) {
   try {
@@ -96,5 +98,43 @@ function loginUser(req, res, next) {
     next(error);
   }
 }
+function getCurrentUser(req, res, next) {
+  try {
+    const userId = req.userId;
+    const currentUser = findUserById(userId);
+    if (!currentUser) {
+      return res.status(401).json({ message: "User does not exists" });
+    }
+    return res.status(200).json({ user: currentUser });
+  } catch (error) {
+    next(error);
+  }
+}
+function logoutUser(req, res, next) {
+  try {
+    const sessionToken = req.cookies?.session_token;
 
-module.exports = { registerUser, loginUser };
+    if (
+      typeof sessionToken !== "string" ||
+      !/^[a-f0-9]{64}$/.test(sessionToken)
+    ) {
+      return res.status(401).json({
+        message: "Authentication required",
+      });
+    }
+    const hashToken = hashSessionToken(sessionToken);
+    deleteSessionByTokenHash(hashToken);
+    res.clearCookie("session_token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+
+    return res.status(200).json({ message: "Logged out" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { registerUser, loginUser, getCurrentUser, logoutUser };

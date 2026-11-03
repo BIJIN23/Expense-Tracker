@@ -5,6 +5,7 @@ const {
   updateTransactionById,
   deleteTransactionById,
   getTransactionSummary,
+  getExpensesByCategory,
 } = require("../repositories/transactionRepository");
 
 function addTransaction(req, res, next) {
@@ -197,7 +198,27 @@ function getSummary(req, res, next) {
     const userId = req.userId;
     const summary = getTransactionSummary(userId);
     const totalIncomeCents = summary.totalIncomeCents;
-    return res.status(200).json({ summary: summary });
+    const totalExpenseCents = summary.totalExpenseCents;
+
+    const balanceCents = totalIncomeCents - totalExpenseCents;
+    return res.status(200).json({
+      totalIncomeCents: totalIncomeCents,
+      totalExpenseCents: totalExpenseCents,
+      balanceCents: balanceCents,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+function getCategorySummary(req, res, next) {
+  try {
+    const userId = req.userId;
+    const categories = getExpensesByCategory(userId);
+
+    return res.status(200).json({
+      categories: categories,
+    });
   } catch (error) {
     next(error);
   }
@@ -209,4 +230,5 @@ module.exports = {
   updateTransaction,
   deleteTransaction,
   getSummary,
+  getCategorySummary,
 };

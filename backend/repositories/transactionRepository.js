@@ -88,8 +88,15 @@ function getTransactionSummary(userid) {
       FROM transactions
       WHERE user_id = ?`,
   );
-  const summary = statement.run(userid);
+  const summary = statement.get(userid);
   return summary;
+}
+function getExpensesByCategory(userid) {
+  const statement = db.prepare(
+    `SELECT category, SUM(amount_cents) AS totalCents FROM transactions WHERE user_id = ? AND type = 'expense' GROUP BY  category ORDER BY totalCents DESC`,
+  );
+  const categoryExpense = statement.all(userid);
+  return categoryExpense;
 }
 module.exports = {
   getTransactionsByUserId,
@@ -98,4 +105,5 @@ module.exports = {
   updateTransactionById,
   deleteTransactionById,
   getTransactionSummary,
+  getExpensesByCategory,
 };
