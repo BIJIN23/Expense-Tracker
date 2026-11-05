@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { apiRequest } from "./api/api";
+import { apiRequest, setUnauthorizedHandler } from "./api/api";
 
 import Login from "./components/Login";
 import Register from "./components/Register";
@@ -11,11 +11,21 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [page, setPage] = useState("login");
   const [checkingAuth, setCheckingAuth] = useState(true);
+  useEffect(() => {
+    setUnauthorizedHandler(() => {
+      setUser(null);
+      setPage("login");
+    });
+
+    return () => {
+      setUnauthorizedHandler(null);
+    };
+  }, []);
 
   useEffect(() => {
     apiRequest("/auth/me")
       .then((res) => {
-        return setUser(res.user);
+        setUser(res.user);
       })
       .catch((err) => {
         console.error(err);
